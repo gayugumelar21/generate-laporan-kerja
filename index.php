@@ -90,7 +90,6 @@
       font-size: 11pt;
     }
 
-    /* Responsif untuk layar kecil */
     @media (max-width: 768px) {
       form {
         padding: 10px;
@@ -155,6 +154,30 @@
   </form>
 
   <script>
+    const kegiatanList = [
+      "CUTI",
+      "PLAY BACK",
+      "OFF",
+      "Koordinasi dengan Pengarah Acara terkait dekorasi acara Sudut pandang",
+      "Melakukan Setting dan bongkar dekorasi acara Sudut pandang",
+      "Koordinasi dengan Pengarah Acara terkait dekorasi acara Ayo Mengaji",
+      "Melakukan Setting dan bongkar dekorasi acara Ayo Mengaji",
+      "Koordinasi dengan Pengarah Acara terkait dekorasi acara Musik Kita",
+      "Melakukan Setting dan bongkar dekorasi acara Musik Kita",
+      "Koordinasi dengan Pengarah Acara terkait dekorasi acara Serambi Iman",
+      "Melakukan Setting dan bongkar dekorasi acara Serambi Iman",
+      "Koordinasi dengan Pengarah Acara terkait dekorasi acara Senada",
+      "Melakukan Setting dan bongkar dekorasi acara Senada",
+      "Koordinasi dengan Pengarah Acara terkait dekorasi acara Warung Kopi",
+      "Melakukan Setting dan bongkar dekorasi acara Warung Kopi",
+      "Koordinasi dengan Pengarah Acara terkait dekorasi acara SIP Kesehatan",
+      "Melakukan Setting dan bongkar dekorasi acara SIP Kesehatan",
+      "Koordinasi dengan Pengarah Acara terkait dekorasi acara Anak Ceria",
+      "Melakukan Setting dan bongkar dekorasi acara Anak Ceria",
+      "Koordinasi dengan Pengarah Acara terkait dekorasi acara Musik Islami",
+      "Melakukan Setting dan bongkar dekorasi acara Musik Islami"
+    ];
+
     function getJumlahHari(bulan, tahun) {
       return new Date(tahun, bulan, 0).getDate();
     }
@@ -176,7 +199,7 @@
       `;
 
       for (let i = 1; i <= hari; i++) {
-        let tanggalFormatted = tahun + '-' + String(bulan).padStart(2, '0') + '-' + String(i).padStart(2, '0');
+        let tanggalFormatted = `${tahun}-${String(bulan).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
         html += `
           <tr>
             <td>${i}</td>
@@ -190,21 +213,17 @@
             </td>
             <td>
               <div class="checkbox-group">
-                <label><strong><input type="checkbox" name="kegiatan[${i}][]" value="CUTI"> CUTI</strong></label>
-                <label><strong><input type="checkbox" name="kegiatan[${i}][]" value="OFF"> OFF</strong></label>
-                <label><strong><input type="checkbox" name="kegiatan[${i}][]" value="PLAYBACK"> PLAYBACK</strong></label>
-                <label><input type="checkbox" name="kegiatan[${i}][]" value="Koordinasi dengan Pengarah Acara terkait dekorasi acara Sudut Pandang"> Koordinasi dengan Pengarah Acara terkait dekorasi acara Sudut Pandang</label>
-                <label><input type="checkbox" name="kegiatan[${i}][]" value="Melakukan Setting dan bongkar dekorasi acara Sudut Pandang"> Melakukan Setting dan bongkar dekorasi acara Sudut Pandang</label>
-                <label><input type="checkbox" name="kegiatan[${i}][]" value="Koordinasi dengan Pengarah Acara terkait dekorasi acara Serambi Iman"> Koordinasi dengan Pengarah Acara terkait dekorasi acara Serambi Iman</label>
-                <label><input type="checkbox" name="kegiatan[${i}][]" value="Melakukan Setting dan bongkar dekorasi acara Serambi Iman"> Melakukan Setting dan bongkar dekorasi acara Serambi Iman</label>
-                <label><input type="checkbox" name="kegiatan[${i}][]" value="Koordinasi dengan Pengarah Acara terkait dekorasi acara Ayo Mengaji"> Koordinasi dengan Pengarah Acara terkait dekorasi acara Ayo Mengaji</label>
-                <label><input type="checkbox" name="kegiatan[${i}][]" value="Melakukan Setting dan bongkar dekorasi acara Ayo Mengaji"> Melakukan Setting dan bongkar dekorasi acara Ayo Mengaji</label>
-                <label><input type="checkbox" name="kegiatan[${i}][]" value="Koordinasi dengan Pengarah Acara terkait dekorasi acara Kesehatan"> Koordinasi dengan Pengarah Acara terkait dekorasi acara Kesehatan</label>
-                <label><input type="checkbox" name="kegiatan[${i}][]" value="Melakukan Setting dan bongkar dekorasi acara Kesehatan"> Melakukan Setting dan bongkar dekorasi acara Kesehatan</label>
-                <label><input type="checkbox" name="kegiatan[${i}][]" value="Koordinasi dengan Pengarah Acara terkait dekorasi acara Anak Ceria"> Koordinasi dengan Pengarah Acara terkait dekorasi acara Anak Ceria</label>
-                <label><input type="checkbox" name="kegiatan[${i}][]" value="Melakukan Setting dan bongkar dekorasi acara Anak Ceria"> Melakukan Setting dan bongkar dekorasi acara Anak Ceria</label>
-                <label><input type="checkbox" name="kegiatan[${i}][]" value="Koordinasi dengan Pengarah Acara terkait dekorasi acara Musik Kita"> Koordinasi dengan Pengarah Acara terkait dekorasi acara Musik Kita</label>
-                <label><input type="checkbox" name="kegiatan[${i}][]" value="Melakukan Setting dan bongkar dekorasi acara Musik Kita"> Melakukan Setting dan bongkar dekorasi acara Musik Kita</label>
+        `;
+
+        kegiatanList.forEach(kegiatan => {
+          // Semua teks ditampilkan normal, tanpa bold
+          const labelText = kegiatan;
+          html += `
+            <label><input type="checkbox" name="kegiatan[${i}][]" value="${kegiatan}"> ${labelText}</label>
+          `;
+        });
+
+        html += `
               </div>
             </td>
           </tr>

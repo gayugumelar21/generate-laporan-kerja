@@ -20,9 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $inputKegiatan = $_POST['kegiatan'][$i] ?? '';
             if (is_array($inputKegiatan)) {
-                $cleaned = array_map('trim', $inputKegiatan);
-                $cleaned = array_filter($cleaned, fn($v) => $v !== '');
-                $kegiatanData[$i] = $cleaned;
+                $cleaned = array_filter(array_map('trim', $inputKegiatan), fn($v) => $v !== '');
+                $kegiatanData[$i] = !empty($cleaned) ? $cleaned : ['-'];
             } else {
                 $uraian = trim($inputKegiatan);
                 $kegiatanData[$i] = $uraian !== '' ? [$uraian] : ['-'];
@@ -69,9 +68,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $table->addCell(6000, $tableStyle)->addText('Uraian Kegiatan', ['bold' => true], ['alignment' => 'center']);
 
         $boldKeywords = [
-            'Sudut Pandang', 'Serambi Iman', 'Ayo Mengaji', 'Kesehatan',
-            'Anak Ceria', 'Musik Kita', 'PLAYBACK', 'CUTI', 'OFF'
+            'CUTI', 'PLAY BACK', 'OFF', 'Sudut pandang', 'Ayo Mengaji',
+            'Musik Kita', 'Serambi Iman', 'Senada', 'Warung Kopi',
+            'SIP Kesehatan', 'Anak Ceria', 'Musik Islami'
         ];
+
+        function highlightKeywords(string $text, array $keywords, $textrun) {
+            $lowerText = mb_strtolower($text);
+            $positions = [];
+
+            foreach ($keywords as $kw) {
+                $kwLower = mb_strtolower($kw);
+                $offset = 0;
+                while (($pos = mb_stripos($lowerText, $kwLower, $offset)) !== false) {
+                    $positions[] = ['pos' => $pos, 'len' => mb_strlen($kw), 'kw' => mb_substr($text, $pos, mb_strlen($kw))];
+                    $offset = $pos + mb_strlen($kw);
+                }
+            }
+
+            usort($positions, fn($a, $b) => $a['pos'] <=> $b['pos']);
+
+            if (empty($positions)) {
+                $textrun->addText($text);
+                return;
+            }
+
+            $currentIndex = 0;
+            foreach ($positions as $posData) {
+                $pos = $posData['pos'];
+                $len = $posData['len'];
+                $kwText = $posData['kw'];
+
+                if ($pos > $currentIndex) {
+                    $textrun->addText(mb_substr($text, $currentIndex, $pos - $currentIndex));
+                }
+
+                $textrun->addText($kwText, ['bold' => true]);
+                $currentIndex = $pos + $len;
+            }
+
+            if ($currentIndex < mb_strlen($text)) {
+                $textrun->addText(mb_substr($text, $currentIndex));
+            }
+        }
 
         for ($i = 1; $i <= $jumlahHari; $i++) {
             $table->addRow();
@@ -83,30 +122,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $cell = $table->addCell(null, $tableStyle);
 
             foreach ($uraianList as $item) {
-                $foundKeyword = null;
-                foreach ($boldKeywords as $keyword) {
-                    if (stripos($item, $keyword) !== false) {
-                        $foundKeyword = $keyword;
-                        break;
-                    }
-                }
-
-                if ($foundKeyword) {
-                    $parts = explode($foundKeyword, $item, 2);
-                    $textrun = $cell->addTextRun();
-                    $textrun->addText("- ");
-                    $textrun->addText($parts[0]);
-                    $textrun->addText($foundKeyword, ['bold' => true]);
-                    $textrun->addText($parts[1] ?? '');
-                } else {
-                    $cell->addText("- " . $item);
-                }
+                $textrun = $cell->addTextRun();
+                $textrun->addText("- ");
+                highlightKeywords($item, $boldKeywords, $textrun);
             }
         }
 
+        // Tanda tangan - Gunakan hari Senin pertama di bulan berikutnya
         $section->addTextBreak(2);
-        $firstMonday = getFirstMonday($tahun, $bulan);
-        $section->addText("Bandar Lampung, $firstMonday", null, ['alignment' => 'right']);
+        $firstMondayNextMonth = getFirstMondayNextMonth($tahun, $bulan);
+        $section->addText("Bandar Lampung, $firstMondayNextMonth", null, ['alignment' => 'right']);
 
         $footerTable = $section->addTable();
         $footerTable->addRow();
@@ -135,22 +160,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $objWriter->save($tempFile);
 
         header("Content-Description: File Transfer");
-        header("Content-Disposition: attachment; filename=\"$fileName\"");
         header("Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        header("Content-Disposition: attachment; filename=\"$fileName\"");
         header("Content-Transfer-Encoding: binary");
         header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         header("Expires: 0");
+        header("Pragma: public");
         readfile($tempFile);
         unlink($tempFile);
         exit;
     }
 }
 
+// Fungsi: Ubah angka hari (1-7) menjadi nama hari
 function jadiHari($angka) {
     $namaHari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
     return $namaHari[$angka - 1] ?? 'Tidak diketahui';
 }
 
+// Fungsi: Ubah angka bulan ke nama bulan
 function getNamaBulan($bulan) {
     $bulanList = [
         '01' => 'Januari', '02' => 'Februari', '03' => 'Maret',
@@ -162,12 +190,23 @@ function getNamaBulan($bulan) {
     return $bulanList[$bulan] ?? 'Tidak diketahui';
 }
 
-function getFirstMonday($tahun, $bulan) {
+// Fungsi: Cari hari Senin pertama di bulan berikutnya
+function getFirstMondayNextMonth($tahun, $bulan) {
+    $bulanBerikut = $bulan + 1;
+    $tahunBerikut = $tahun;
+
+    if ($bulanBerikut > 12) {
+        $bulanBerikut = 1;
+        $tahunBerikut++;
+    }
+
     for ($i = 1; $i <= 7; $i++) {
-        $tanggal = date("Y-m-d", strtotime("$tahun-$bulan-$i"));
+        $tanggal = date("Y-m-d", strtotime("$tahunBerikut-$bulanBerikut-$i"));
         if (date('N', strtotime($tanggal)) == 1) {
-            return date('d', strtotime($tanggal)) . ' ' . getNamaBulan($bulan) . ' ' . $tahun;
+            return date('d', strtotime($tanggal)) . ' ' . getNamaBulan($bulanBerikut) . ' ' . $tahunBerikut;
         }
     }
-    return '01 ' . getNamaBulan($bulan) . ' ' . $tahun;
+
+    return '01 ' . getNamaBulan($bulanBerikut) . ' ' . $tahunBerikut;
 }
+?>
